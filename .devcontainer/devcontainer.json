@@ -10,6 +10,7 @@
 			"optimize": true,
 			"version": "3.12"
 		},
+		"ghcr.io/devcontainers/features/git:1": {},
 		"ghcr.io/devcontainers-contrib/features/bandit:2": {
 			"version": "latest"
 		},
