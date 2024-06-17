@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  database:
+    container_name: journal_officiel_database
+    image: public.ecr.aws/docker/library/postgres:15
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=Miserables_1862
+      - POSTGRES_USER=victor_hugo
+      - POSTGRES_DB=journal_officiel
+
+volumes:
+  postgres-data:
