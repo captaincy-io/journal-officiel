@@ -38,6 +38,7 @@ def get_publication_page_url(url: str):
     if soup is not None:
         soup.getText()
         link = soup.find("article").find("a", href=True)
+        print(f"https://www.legifrance.gouv.fr{link['href']}")
         return f"https://www.legifrance.gouv.fr{link['href']}"
 
 
@@ -65,21 +66,23 @@ def get_publication_page_content_detail(url: str):
         content_article: str = ""
         name_article: str = ""
         try:
-            name_article = (
-                soup.find(id="liste-sommaire").find("li").find("article").find("p").getText()
-            )
-            content_article = (
-                soup.find(id="liste-sommaire")
-                .find("li")
-                .find("article")
-                .find("div", class_="content")
-                .getText()
-            )
+            liste_sommaire = soup.find(id="liste-sommaire")
+            li_elements = liste_sommaire.find_all("li")
+            for li in li_elements:
+                article = li.find("article")
+                if article:
+                    p = article.find("p")
+                    if p:
+                        article_name = p.getText()
+                        print(f"{article_name} : ")
+                    div = article.find("div", class_="content")
+                    if div:
+                        article_content = div.getText()
+                        print(article_content)
+                        print("")
         except AttributeError as error:
             print(f"[ERROR] {error}")
-
-        print(name_article)
-        print(content_article)
+    return ""
 
 
 if __name__ == "__main__":
