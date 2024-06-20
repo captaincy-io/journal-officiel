@@ -2,8 +2,10 @@
 name = "journal-officiel"
 version = "0.1.0"
 description = ""
-authors = ["Axel Chauvet <chauvetaxel@free.fr>"]
-readme = "README.md"
+authors = [
+    "Axel Chauvet <chauvetaxel@free.fr>",
+    "Jeremy Chauvet <jeremy@captaincy.io>"
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
