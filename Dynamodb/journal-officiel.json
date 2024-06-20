@@ -1,0 +1,75 @@
+{
+  "ModelName": "journal-officiel",
+  "ModelMetadata": {
+    "Author": "Axel Chauvet",
+    "DateCreated": "Jun 20, 2024, 10:35 AM",
+    "DateLastModified": "Jun 20, 2024, 11:02 AM",
+    "Description": "database schema",
+    "AWSService": "Amazon DynamoDB",
+    "Version": "3.0"
+  },
+  "DataModel": [
+    {
+      "TableName": "journal-officiel",
+      "KeyAttributes": {
+        "PartitionKey": {
+          "AttributeName": "PublicationDate",
+          "AttributeType": "S"
+        },
+        "SortKey": {
+          "AttributeName": "PublicationId",
+          "AttributeType": "S"
+        }
+      },
+      "NonKeyAttributes": [
+        {
+          "AttributeName": "PublicationUrl",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "ContentItem",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "ContentLink",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "ContentSummary",
+          "AttributeType": "S"
+        }
+      ],
+      "DataAccess": {
+        "MySql": {}
+      },
+      "SampleDataFormats": {},
+      "BillingMode": "PROVISIONED",
+      "ProvisionedCapacitySettings": {
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 5,
+          "WriteCapacityUnits": 5
+        },
+        "AutoScalingRead": {
+          "ScalableTargetRequest": {
+            "MinCapacity": 1,
+            "MaxCapacity": 10,
+            "ServiceRole": "AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+          },
+          "ScalingPolicyConfiguration": {
+            "TargetValue": 70
+          }
+        },
+        "AutoScalingWrite": {
+          "ScalableTargetRequest": {
+            "MinCapacity": 1,
+            "MaxCapacity": 10,
+            "ServiceRole": "AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+          },
+          "ScalingPolicyConfiguration": {
+            "TargetValue": 70
+          }
+        }
+      }
+    }
+  ]
+}
