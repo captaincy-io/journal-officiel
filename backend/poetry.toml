@@ -1,0 +1,5 @@
+virtualenvs.create = true
+cache-dir = "./.poetry/cache/"
+virtualenvs.path = "{cache-dir}/virtualenvs"  # /path/to/cache/directory/virtualenvs
+virtualenvs.prefer-active-python = false
+virtualenvs.prompt = "{project_name}-py{python_version}"
