@@ -1,5 +1,6 @@
 import json
-
+import boto3
+import botocore
 import core
 import requests
 from bs4 import BeautifulSoup
@@ -50,7 +51,7 @@ def get_publication_page_content(page_url: str) -> []:
                     "link": f"https://www.legifrance.gouv.fr{link["href"]}",
                 }
             )
-            break
+            #break
         return output
 
 
@@ -74,18 +75,74 @@ def get_publication_page_content_detail(page_url: str):
     return output
 
 
+# def insert_items(table):
+#     items = [
+#         {'id': '001', 'sort_key': 1, 'attribute1': 'value1', 'attribute2': 'value2'},
+#         {'id': '002', 'sort_key': 2, 'attribute1': 'value3', 'attribute2': 'value4'},
+#         {'id': '003', 'sort_key': 3, 'attribute1': 'value5', 'attribute2': 'value6'}
+#     ]
+#
+#     with table.batch_write_item() as batch:
+#         for item in items:
+#             batch.put_item(Item=item)
+
+def create_table(dynamodb):
+    table = dynamodb.create_table(
+        TableName='journal-officiel',
+        KeySchema=[
+            {
+                'AttributeName': 'PublicationDate',
+                'KeyType': 'HASH'  # Partition key
+            },
+            {
+                'AttributeName': 'PublicationId',
+                'KeyType': 'RANGE'  # Sort key
+            }
+        ],
+        AttributeDefinitions=[
+            {
+                'AttributeName': 'PublicationDate',
+                'AttributeType': 'S'
+            },
+            {
+                'AttributeName': 'PublicationId',
+                'AttributeType': 'S'
+            },
+        ],
+        ProvisionedThroughput={
+            'ReadCapacityUnits': 10,
+            'WriteCapacityUnits': 10
+        }
+    )
+
+    return table
+
+
 if __name__ == "__main__":
-    # Variables
+    #Variables
     response = []
+    date = input("Type the date (YYYY/MM/DD): ")
+    #date = "2024/06/14"
+    sanitized_date = sanitize_date(date)
+    if sanitized_date:
+        url = f"https://www.legifrance.gouv.fr/jorf/jo/{date}"
+    else:
+       print("Invalid date.")
 
+    dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000", region_name='localhost',
+                              aws_access_key_id='dummy', aws_secret_access_key='dummy')
+    table = create_table(dynamodb)
+    print("Table status:", table.table_status)
+    table_name = "journal-officiel"
+    table.meta.client.get_waiter('table_exists').wait(TableName=table_name)
+    print(f"Table {table_name} créée avec succès.")
 
-    # date = input("Type the date (YYYY/MM/DD): ")
-    date = "2024/06/14"
-    # sanitized_date = sanitize_date(date_input)
-    # if sanitized_date:
-    url = f"https://www.legifrance.gouv.fr/jorf/jo/{date}"
-    # else:
-    #    print("Invalid date.")
+    dynamodb = boto3.resource(
+        'dynamodb',
+        endpoint_url="http://localhost:8000",
+        region_name='localhost',
+        aws_access_key_id='dummy', aws_secret_access_key='dummy'
+    )
     publication_page_url = get_publication_page_url(url)
     if publication_page_url is not None:
         publication_page_content = get_publication_page_content(publication_page_url)
@@ -94,7 +151,18 @@ if __name__ == "__main__":
             # print(json.dumps(articles, indent=4))
             item['articles'] = articles
             response.append(item)
+            print(json.dumps(item, indent=4))
+            table.put_item(
+                Item={
+                    'PublicationDate': date,
+                    'PublicationId': item["id"],
+                    'PublicationUrl': item["link"],
+                    #'ContentItems': articles,
+                    'ContentSummary': 'Résumé du décret'
+                }
+            )
 
             # response.append(publication_page_content.update())
         print(json.dumps(response, indent=4))
         print("----")
+        print("Données ajoutées avec succès.")
