@@ -1,6 +1,7 @@
 import json
 import boto3
 import botocore
+from botocore.exceptions import ClientError
 import core
 import requests
 from bs4 import BeautifulSoup
@@ -117,6 +118,36 @@ def create_table(dynamodb):
 
     return table
 
+def create_dynamodb_table_if_not_exists(table_name):
+    # Initialize a session using Amazon DynamoDB
+    dynamodb_client = boto3.client(
+        "dynamodb",
+        endpoint_url="http://localhost:8000",
+        region_name="localhost",
+        aws_access_key_id="dummy",
+        aws_secret_access_key="dummy",
+    )
+    try:
+        # Check if the table exists
+        response = dynamodb_client.describe_table(TableName=table_name)
+        print(f"Table {table_name} already exists.")
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ResourceNotFoundException':
+            # If the table does not exist, create it
+            print(f"Table {table_name} does not exist. Creating the table.")
+            dynamodb_resource = boto3.resource(
+                "dynamodb",
+                endpoint_url="http://localhost:8000",
+                region_name="localhost",
+                aws_access_key_id="dummy",
+                aws_secret_access_key="dummy",
+            )
+            table = create_table(dynamodb_resource)
+            print("Table status:", table.table_status)
+            table_name = "journal-officiel"
+            table.meta.client.get_waiter("table_exists").wait(TableName=table_name)
+            print(f"Table {table_name} created with success.")
+
 
 if __name__ == "__main__":
     response = []
@@ -127,19 +158,7 @@ if __name__ == "__main__":
     else:
         print("Invalid date.")
         exit(0)
-
-    dynamodb = boto3.resource(
-        "dynamodb",
-        endpoint_url="http://localhost:8000",
-        region_name="localhost",
-        aws_access_key_id="dummy",
-        aws_secret_access_key="dummy",
-    )
-    table = create_table(dynamodb)
-    print("Table status:", table.table_status)
-    table_name = "journal-officiel"
-    table.meta.client.get_waiter("table_exists").wait(TableName=table_name)
-    print(f"Table {table_name} créée avec succès.")
+    create_dynamodb_table_if_not_exists('journal-officiel')
 
     dynamodb = boto3.resource(
         "dynamodb",
@@ -157,12 +176,13 @@ if __name__ == "__main__":
             item["articles"] = articles
             response.append(item)
             print(json.dumps(item, indent=4))
+            table = dynamodb.Table('journal-officiel')
             table.put_item(
                 Item={
                     "PublicationDate": date,
                     "PublicationId": item["id"],
                     "PublicationUrl": item["link"],
-                    #'ContentItems': articles,
+                    "ContentItems": str(articles),
                     "ContentSummary": "Résumé du décret",
                 }
             )
@@ -170,4 +190,4 @@ if __name__ == "__main__":
             # response.append(publication_page_content.update())
         print(json.dumps(response, indent=4))
         print("----")
-        print("Données ajoutées avec succès.")
+        print("Files added with success.")
