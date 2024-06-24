@@ -2,6 +2,7 @@ import json
 import boto3
 import botocore
 from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Key
 import core
 import requests
 from bs4 import BeautifulSoup
@@ -85,8 +86,45 @@ def get_publication_page_content_detail(page_url: str):
                     }
                 )
         except AttributeError as error:
-            print(f"[ERROR] {error}")
+            # print(f"[ERROR] {error}")
+            try:
+                main_block = soup.find(id="liste-sommaire")
+                articles_block = main_block.find_all("article")
+                for article_block in articles_block:
+                    article_content = article_block.find("div", class_="content")
+
+                    output.append(
+                        {
+                           article_content.getText(),
+                        }
+                    )
+            except AttributeError as error:
+                print(f"[ERROR] {error}")
+        return output
     return output
+
+
+# Get each alternative content article of the publication page
+# def get_publication_page_content_alternative_detail(page_url: str):
+#     output = []
+#
+#     soup = get_html(page_url)
+#     if soup is not None:
+#         try:
+#             main_block = soup.find(id="liste-sommaire")
+#             articles_block = main_block.find_all("article")
+#             for article_block in articles_block:
+#                 article_content = article_block.find("div", class_="content")
+#
+#                 output.append(
+#                     {
+#                         int(
+#                         ): article_content.getText(),
+#                     }
+#                 )
+#         except AttributeError as error:
+#             print(f"[ERROR] {error}")
+#     return output
 
 
 # def insert_items(table):
@@ -149,6 +187,19 @@ def create_dynamodb_table_if_not_exists(table_name):
             print(f"Table {table_name} created with success.")
 
 
+def check_sort_key_exists(partition_key_value, sort_key_value):
+    response = table.query(
+        KeyConditionExpression=Key('PublicationDate').eq(partition_key_value) & Key('PublicationId').eq(
+            sort_key_value)
+    )
+
+    # If the count of items is greater than 0, the sort key exists
+    if response['Count'] > 0:
+        return True
+    else:
+        return False
+
+
 if __name__ == "__main__":
     response = []
     date = input("Type the date (YYYY/MM/DD): ")
@@ -175,19 +226,27 @@ if __name__ == "__main__":
             # print(json.dumps(articles, indent=4))
             item["articles"] = articles
             response.append(item)
-            print(json.dumps(item, indent=4))
+            # print(json.dumps(item, indent=4))
             table = dynamodb.Table('journal-officiel')
-            table.put_item(
-                Item={
-                    "PublicationDate": date,
-                    "PublicationId": item["id"],
-                    "PublicationUrl": item["link"],
-                    "ContentItems": str(articles),
-                    "ContentSummary": "Résumé du décret",
-                }
-            )
-
+            number_of_files = 0
+            # Check if sort key is already in the table
+            if check_sort_key_exists(date, item["id"]) is True:
+                print(f"The '{item["id"]}' article is already in the table, file not added.")
+            else:
+                table.put_item(
+                    Item={
+                        "PublicationDate": date,
+                        "PublicationId": item["id"],
+                        "PublicationUrl": item["link"],
+                        "ContentItems": str(articles),
+                        "ContentSummary": "Résumé du décret",
+                    }
+                )
+                number_of_files += 1
             # response.append(publication_page_content.update())
-        print(json.dumps(response, indent=4))
+        # print(json.dumps(response, indent=4))
         print("----")
-        print("Files added with success.")
+        if number_of_files == 0:
+            print("All files were already in the table, no file added.")
+        else:
+            print(f"{number_of_files} file(s) added with success.")
