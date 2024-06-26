@@ -103,37 +103,6 @@ def get_publication_page_content_detail(page_url: str):
         return output
     return output
 
-
-# Get each alternative content article of the publication page
-# def get_publication_page_content_alternative_detail(page_url: str):
-#     output = []
-#
-#     soup = get_html(page_url)
-#     if soup is not None:
-#         try:
-#             main_block = soup.find(id="liste-sommaire")
-#             articles_block = main_block.find_all("article")
-#             for article_block in articles_block:
-#                 article_content = article_block.find("div", class_="content")
-#
-#                 output.append(
-#                     {
-#                         int(
-#                         ): article_content.getText(),
-#                     }
-#                 )
-#         except AttributeError as error:
-#             print(f"[ERROR] {error}")
-#     return output
-
-
-# def insert_items(table):
-#     items = [
-#         {'id': '001', 'sort_key': 1, 'attribute1': 'value1', 'attribute2': 'value2'},
-#         {'id': '002', 'sort_key': 2, 'attribute1': 'value3', 'attribute2': 'value4'},
-#         {'id': '003', 'sort_key': 3, 'attribute1': 'value5', 'attribute2': 'value6'}
-#     ]
-#
 #     with table.batch_write_item() as batch:
 #         for item in items:
 #             batch.put_item(Item=item)
@@ -153,7 +122,6 @@ def create_table(dynamodb):
         ],
         ProvisionedThroughput={"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
     )
-
     return table
 
 def create_dynamodb_table_if_not_exists(table_name):
@@ -200,6 +168,7 @@ def check_sort_key_exists(partition_key_value, sort_key_value):
         return False
 
 
+
 if __name__ == "__main__":
     response = []
     date = input("Type the date (YYYY/MM/DD): ")
@@ -218,17 +187,44 @@ if __name__ == "__main__":
         aws_access_key_id="dummy",
         aws_secret_access_key="dummy",
     )
+    number_of_files = 0
     publication_page_url = get_publication_page_url(url)
+    # Create a Bedrock Runtime client in the AWS Region of your choice.
+    bedrock_client = boto3.client("bedrock-runtime", region_name="eu-west-3")
+    # Set the model ID, e.g., Titan Text Premier.
+    model_id = "amazon.titan-text-express-v1"
     if publication_page_url is not None:
         publication_page_content = get_publication_page_content(publication_page_url)
         for item in publication_page_content:
             articles = get_publication_page_content_detail(item["link"])
-            # print(json.dumps(articles, indent=4))
             item["articles"] = articles
             response.append(item)
-            # print(json.dumps(item, indent=4))
             table = dynamodb.Table('journal-officiel')
-            number_of_files = 0
+
+            # Define the prompt for the model.
+            prompt = f"Résume le texte sans liste: {str(articles)}"
+            # Format the request payload using the model's native structure.
+            native_request = {
+                "inputText": prompt,
+                "textGenerationConfig": {
+                    "maxTokenCount": 512,
+                    "temperature": 0,
+                },
+            }
+            # Convert the native request to JSON.
+            request = json.dumps(native_request)
+            try:
+                # Invoke the model with the request.
+                ia_response = bedrock_client.invoke_model(modelId=model_id, body=request)
+            except (ClientError, Exception) as e:
+                print(f"ERROR: Can't invoke '{model_id}'. Reason: {e}")
+                exit(1)
+            # Decode the response body.
+            model_response = json.loads(ia_response["body"].read())
+            # Extract and print the response text.
+            Content_Summary = model_response["results"][0]["outputText"]
+            print(Content_Summary)
+
             # Check if sort key is already in the table
             if check_sort_key_exists(date, item["id"]) is True:
                 print(f"The '{item["id"]}' article is already in the table, file not added.")
@@ -239,10 +235,10 @@ if __name__ == "__main__":
                         "PublicationId": item["id"],
                         "PublicationUrl": item["link"],
                         "ContentItems": str(articles),
-                        "ContentSummary": "Résumé du décret",
+                        "ContentSummary": Content_Summary,
                     }
                 )
-                number_of_files += 1
+            number_of_files += 1
             # response.append(publication_page_content.update())
         # print(json.dumps(response, indent=4))
         print("----")
@@ -250,3 +246,10 @@ if __name__ == "__main__":
             print("All files were already in the table, no file added.")
         else:
             print(f"{number_of_files} file(s) added with success.")
+
+
+
+
+
+
+
