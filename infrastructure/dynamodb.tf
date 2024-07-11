@@ -20,11 +20,6 @@ resource "aws_dynamodb_table" "journal_officiel" {
   }
 
   attribute {
-    name = "PublicationUrl"
-    type = "S"
-  }
-
-  attribute {
     name = "ContentItem"
     type = "S"
   }
@@ -40,11 +35,11 @@ resource "aws_dynamodb_table" "journal_officiel" {
   }
 
   ttl {
-    attribute_name = "TimeToExist"
+    attribute_name = "Expiration"
     enabled        = false
   }
 
   tags = {
-    Name        = "journal-officiel"
+    Name = "journal-officiel"
   }
 }
