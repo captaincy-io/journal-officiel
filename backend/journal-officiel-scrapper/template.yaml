@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: journal-officiel-scrapper
+
+Globals:
+  Function:
+    Timeout: 90
+    Tracing: Active
+    LoggingConfig:
+      LogFormat: JSON
+  Api:
+    TracingEnabled: true
+Resources:
+  JournalOfficielScrapperFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageUri: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/journal-officiel:journal-officiel-v1
+      Environment:
+        Variables:
+          dynamodb_table_name: "journal-officiel"
+    Metadata:
+      DockerTag: journal-officiel-v1
+      DockerContext: ./src
+      Dockerfile: Dockerfile
+    Policies:
+      - DynamoDBWritePolicy:
+          TableName:
+            "journal-officiel"
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'

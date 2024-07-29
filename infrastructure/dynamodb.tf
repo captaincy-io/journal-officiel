@@ -14,31 +14,6 @@ resource "aws_dynamodb_table" "journal_officiel" {
     type = "S"
   }
 
-  attribute {
-    name = "PublicationUrl"
-    type = "S"
-  }
-
-  attribute {
-    name = "ContentItem"
-    type = "S"
-  }
-
-  attribute {
-    name = "ContentLink"
-    type = "S"
-  }
-
-  attribute {
-    name = "ContentSummary"
-    type = "S"
-  }
-
-  ttl {
-    attribute_name = "Expiration"
-    enabled        = false
-  }
-
   tags = {
     Name = "journal-officiel"
   }
