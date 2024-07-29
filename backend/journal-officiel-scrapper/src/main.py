@@ -3,17 +3,6 @@ import json
 import core
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
-
-
-def sanitize_date(date_str, date_format="%Y/%m/%d"):
-    try:
-        # Attempt to parse the date
-        return datetime.strptime(date_str, date_format)
-    except ValueError:
-        # If the date is invalid, handle the error
-        print("Invalid date format")
-        return None
 
 
 def get_html(page_url: str):
@@ -74,15 +63,10 @@ def get_publication_page_content_detail(page_url: str):
     return output
 
 
-if __name__ == "__main__":
+def handler(event, context):
     # Variables
     response = []
-
-
-    # date = input("Type the date (YYYY/MM/DD): ")
     date = "2024/06/14"
-    # sanitized_date = sanitize_date(date_input)
-    # if sanitized_date:
     url = f"https://www.legifrance.gouv.fr/jorf/jo/{date}"
     # else:
     #    print("Invalid date.")
@@ -91,7 +75,6 @@ if __name__ == "__main__":
         publication_page_content = get_publication_page_content(publication_page_url)
         for item in publication_page_content:
             articles = get_publication_page_content_detail(item["link"])
-            # print(json.dumps(articles, indent=4))
             item['articles'] = articles
             response.append(item)
 

@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 
 
 def generate_random_browser_headers():
@@ -28,3 +29,13 @@ def generate_random_browser_headers():
         "Connection": "keep-alive",
         "Upgrade-Insecure-Requests": "1"
     }
+
+
+def sanitize_date(date_str, date_format="%Y/%m/%d"):
+    try:
+        # Attempt to parse the date
+        return datetime.strptime(date_str, date_format)
+    except ValueError:
+        # If the date is invalid, handle the error
+        print("Invalid date format")
+        return None
