@@ -1,7 +1,12 @@
+import boto3
 import json
 import core
+import logging
 import requests
+import os
 from bs4 import BeautifulSoup
+
+logger = logging.getLogger(__name__)
 
 def get_html(page_url: str):
     """
@@ -24,10 +29,10 @@ def get_html(page_url: str):
             case 200:
                 return BeautifulSoup(response.text, "html.parser")
             case 403:
-                print(f"403 error trying to access {page_url}. Reason: {response.reason} ")
+                logger.error(f"403 error trying to access {page_url}. Reason: {response.reason} ")
                 return None
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching the URL: {e}")
+        logger.error(f"Error fetching the URL: {e}")
 
 
 def get_publication_page_url(page_url: str):
@@ -113,7 +118,7 @@ def get_publication_page_content_detail(page_url: str):
                     int(article_number.getText().replace("Article", "").strip()): article_content.getText(),
                 })
         except AttributeError as error:
-            print(f"[ERROR] {error}")
+            logger.error(f"[ERROR] {error}")
     return output
 
 
@@ -132,6 +137,10 @@ def handler(event, context):
     Returns:
         None: This function does not return anything but prints the response.
     """
+    logging.basicConfig(level=logging.INFO)
+
+    s3_client = boto3.client('s3')
+
     response = []
     date = "2024/06/14"
     url = f"https://www.legifrance.gouv.fr/jorf/jo/{date}"
@@ -143,6 +152,16 @@ def handler(event, context):
             item['articles'] = articles
             response.append(item)
 
-            # response.append(publication_page_content.update())
-        print(json.dumps(response, indent=4))
-        print("----")
+        # Save the response to a JSON file
+        filename = f"publication_content_{date.replace('/', '-')}.json"
+        with open(filename, 'w', encoding='utf-8') as json_file:
+            json.dump(response, json_file, ensure_ascii=False, indent=4)
+
+        # Upload the JSON file to S3  # NEW
+        bucket_name = os.environ["datalake_s3_bucket_name"]
+        s3_key = f"publications/{filename}"
+        try:
+            s3_client.upload_file(filename, bucket_name, s3_key, ExtraArgs={'StorageClass': 'ONEZONE_IA'})
+            logger.info(f"File uploaded to S3: s3://{bucket_name}/{s3_key}")
+        except Exception as e:
+            logger.error(f"Error uploading file to S3: {e}")

@@ -19,6 +19,7 @@ Resources:
       Environment:
         Variables:
           dynamodb_table_name: "journal-officiel"
+          datalake_s3_bucket_name: "journal-officiel-datalake"
     Metadata:
       DockerTag: journal-officiel-v1
       DockerContext: ./src
