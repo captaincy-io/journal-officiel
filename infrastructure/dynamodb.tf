@@ -16,5 +16,6 @@ resource "aws_dynamodb_table" "journal_officiel" {
 
   tags = {
     Name = "journal-officiel"
+    awsApplication = "journal-officiel"
   }
 }

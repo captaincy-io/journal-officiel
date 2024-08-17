@@ -27,6 +27,8 @@ Resources:
       - DynamoDBWritePolicy:
           TableName:
             "journal-officiel"
+    Tags:
+      awsApplication: "journal-officiel"
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
     Properties:
