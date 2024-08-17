@@ -1,8 +1,8 @@
 resource "aws_dynamodb_table" "journal_officiel" {
-  name           = "journal-officiel"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "PublicationId"
-  range_key      = "PublicationDate"
+  name         = "journal-officiel"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "PublicationId"
+  range_key    = "PublicationDate"
 
   attribute {
     name = "PublicationId"
@@ -15,7 +15,7 @@ resource "aws_dynamodb_table" "journal_officiel" {
   }
 
   tags = {
-    Name = "journal-officiel"
+    Name           = "journal-officiel"
     awsApplication = "journal-officiel"
   }
 }
