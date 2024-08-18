@@ -1,5 +1,9 @@
 resource "aws_glue_catalog_database" "journal_officiel" {
   name = "journal-officiel-database"
+
+  tags = merge({
+    Name = "journal-officiel-database"
+  }, local.tags)
 }
 
 resource "aws_glue_catalog_table" "journal_officiel" {
@@ -68,4 +72,8 @@ resource "aws_glue_data_quality_ruleset" "journal_officiel_rule_content" {
     database_name = aws_glue_catalog_database.journal_officiel.name
     table_name    = aws_glue_catalog_table.journal_officiel.name
   }
+
+  tags = merge({
+    Name = "journal-officiel-rule-content"
+  }, local.tags)
 }

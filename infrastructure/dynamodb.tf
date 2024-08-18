@@ -14,8 +14,7 @@ resource "aws_dynamodb_table" "journal_officiel" {
     type = "S"
   }
 
-  tags = {
+  tags = merge({
     Name           = "journal-officiel"
-    awsApplication = "journal-officiel"
-  }
+  }, local.tags)
 }

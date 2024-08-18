@@ -1,11 +1,9 @@
 resource "aws_s3_bucket" "journal_officiel_datalake" {
   bucket = "journal-officiel-datalake"
 
-  tags = {
-    awsApplication = "journal-officiel"
-    Name           = "journal-officiel-datalake"
-    Environment    = "production"
-  }
+  tags = merge({
+    Name = "journal-officiel-datalake"
+  }, local.tags)
 }
 
 resource "aws_s3_bucket_policy" "journal_officiel_datalake" {
