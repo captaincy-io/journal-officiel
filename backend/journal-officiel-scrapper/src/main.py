@@ -123,17 +123,18 @@ def get_publication_page_content_detail(page_url: str):
                     article_number = (
                         article_block.find("p", {"class": "name-article"})
                         .getText()
-                        .replace("Article", "")
                         .strip()
                     )
                     article_content = article_block.find(
                         "div", class_="content"
                     ).getText()
                     # Hydrate map.
-                    output.append({int(article_number): article_content})
+                    output.append(f"{article_number} - {article_content} #")
             except AttributeError as error:
                 logger.error(f"[ERROR] {error}.")
                 exit(1)
+
+        output = "".join(map(str, output))
     return output
 
 
@@ -157,14 +158,13 @@ def handler(event, context):
     s3_client = boto3.client("s3")
 
     response = []
-    date = "2024/06/15"
+    date = "2024/06/21"
     url = f"https://www.legifrance.gouv.fr/jorf/jo/{date}"
     publication_page_url = get_publication_page_url(url)
     if publication_page_url is not None:
         publication_page_content = get_publication_page_content(publication_page_url)
         for item in publication_page_content:
-            articles = get_publication_page_content_detail(item["link"])
-            item["articles"] = articles
+            item["content"] = get_publication_page_content_detail(item["link"])
             response.append(item)
 
         # Save the response to a JSON file
