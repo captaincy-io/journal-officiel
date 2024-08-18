@@ -91,7 +91,6 @@ def get_publication_page_content(page_url: str) -> []:
                     "link": f"https://www.legifrance.gouv.fr{link_href}",
                 }
             )
-            break
         return output
 
 
@@ -114,22 +113,27 @@ def get_publication_page_content_detail(page_url: str):
 
     soup = get_html(page_url)
     if soup is not None:
-        try:
-            main_block = soup.find(id="liste-sommaire")
-            articles_block = main_block.find_all("article")
-            for article_block in articles_block:
-                article_number = article_block.find("p", {"class": "name-article"})
-                article_content = article_block.find("div", class_="content")
-
-                output.append(
-                    {
-                        int(
-                            article_number.getText().replace("Article", "").strip()
-                        ): article_content.getText(),
-                    }
-                )
-        except AttributeError as error:
-            logger.error(f"[ERROR] {error}")
+        main_block = soup.find(id="liste-sommaire")
+        articles_block = main_block.find_all("article")
+        for article_block in articles_block:
+            try:
+                if article_block.find("span", {"class": "unnamed-article"}):
+                    break
+                else:
+                    article_number = (
+                        article_block.find("p", {"class": "name-article"})
+                        .getText()
+                        .replace("Article", "")
+                        .strip()
+                    )
+                    article_content = article_block.find(
+                        "div", class_="content"
+                    ).getText()
+                    # Hydrate map.
+                    output.append({int(article_number): article_content})
+            except AttributeError as error:
+                logger.error(f"[ERROR] {error}.")
+                exit(1)
     return output
 
 
@@ -153,7 +157,7 @@ def handler(event, context):
     s3_client = boto3.client("s3")
 
     response = []
-    date = "2024/06/14"
+    date = "2024/06/15"
     url = f"https://www.legifrance.gouv.fr/jorf/jo/{date}"
     publication_page_url = get_publication_page_url(url)
     if publication_page_url is not None:
@@ -166,7 +170,7 @@ def handler(event, context):
         # Save the response to a JSON file
         filename = f"publication_content_{date.replace('/', '-')}.json"
         with open(filename, "w", encoding="utf-8") as json_file:
-            json.dump(response, json_file, ensure_ascii=False, indent=4)
+            json.dump(response, json_file, ensure_ascii=False)
 
         # Upload the JSON file to S3
         bucket_name = os.environ["datalake_s3_bucket_name"]
