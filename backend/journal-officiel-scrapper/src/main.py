@@ -5,6 +5,7 @@ import logging
 import requests
 import os
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +159,7 @@ def handler(event, context):
     s3_client = boto3.client("s3")
 
     response = []
-    date = "2024/06/21"
+    date = datetime.now().strftime("%Y/%m/%d")
     url = f"https://www.legifrance.gouv.fr/jorf/jo/{date}"
     publication_page_url = get_publication_page_url(url)
     if publication_page_url is not None:
