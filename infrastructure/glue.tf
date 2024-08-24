@@ -64,9 +64,9 @@ resource "aws_glue_catalog_table" "journal_officiel" {
 }
 
 resource "aws_glue_data_quality_ruleset" "journal_officiel_rule_content" {
-  name    = "journal-officiel-rule-content"
+  name        = "journal-officiel-rule-content"
   description = "This rule checks tether text in column named 'content' is filled."
-  ruleset = "Rules = [ColumnValues \"content\" != NULL]"
+  ruleset     = "Rules = [ColumnValues \"content\" != NULL]"
 
   target_table {
     database_name = aws_glue_catalog_database.journal_officiel.name

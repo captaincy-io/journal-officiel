@@ -1,5 +1,5 @@
 resource "aws_scheduler_schedule" "scrapper" {
-  name       = "schedule-journal-officiel-scrapper"
+  name        = "schedule-journal-officiel-scrapper"
   description = "Schedule used to trigger Lambda to scrap data of Journal Officiel."
 
   flexible_time_window {
@@ -28,7 +28,7 @@ data "aws_iam_policy_document" "schedule_assume_role" {
 data "aws_iam_policy_document" "invoke_lambda" {
   statement {
     actions = ["lambda:InvokeFunction"]
-    effect = "Allow"
+    effect  = "Allow"
     resources = [
       "arn:aws:lambda:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:function:journal-officiel-scrapper"
     ]
@@ -39,13 +39,15 @@ resource "aws_iam_role" "schedule_lambda_scrapper" {
   name               = "schedule-lambda-journal-officiel-scrapper"
   path               = "/system/"
   assume_role_policy = data.aws_iam_policy_document.schedule_assume_role.json
+  tags               = local.tags
 }
 
 resource "aws_iam_policy" "allow_invoke_lambda_scrapper" {
   name        = "policy-invoke-lambda-journal-officiel-scrapper"
   path        = "/"
   description = "Policy allowing EventBridge Schedule to invoke Lambda 'journal-officiel-scrapper'."
-  policy = data.aws_iam_policy_document.invoke_lambda.json
+  policy      = data.aws_iam_policy_document.invoke_lambda.json
+  tags        = local.tags
 }
 
 resource "aws_iam_role_policy_attachment" "scheduler_lambda" {
