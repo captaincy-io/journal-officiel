@@ -14,6 +14,8 @@ Resources:
   JournalOfficielScrapperFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: journal-officiel-scrapper
+      Description: Lambda used to collect Journal Officiel datas.
       PackageType: Image
       ImageUri: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/journal-officiel:journal-officiel-v1
       Environment:
