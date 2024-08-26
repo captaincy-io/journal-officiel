@@ -166,7 +166,7 @@ def handler(event, context):
     s3_client = boto3.client("s3")
 
     response = []
-    date = datetime.now().strftime("%d/%m/%Y")
+    date = datetime.now().strftime("%Y/%m/%d")
     logger.info(f"Fetching publications for date {date}")
 
     url = f"https://www.legifrance.gouv.fr/jorf/jo/{date}"
