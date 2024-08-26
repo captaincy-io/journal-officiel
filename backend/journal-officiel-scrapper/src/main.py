@@ -57,10 +57,17 @@ def get_publication_page_url(page_url: str):
         or the link could not be found.
     """
     soup = get_html(page_url)
+
     if soup is not None:
-        soup.getText()
-        link = soup.find("article").find("a", href=True)
-        return f"https://www.legifrance.gouv.fr{link['href']}"
+        page_content = soup.getText()
+
+        if "aucun résultat" in page_content:
+            logger.error("No content available for this date.")
+            exit(0)
+        else:
+
+            link = soup.find("article").find("a", href=True)
+            return f"https://www.legifrance.gouv.fr{link['href']}"
 
 
 def get_publication_page_content(page_url: str) -> []:
@@ -159,8 +166,11 @@ def handler(event, context):
     s3_client = boto3.client("s3")
 
     response = []
-    date = datetime.now().strftime("%Y/%m/%d")
+    date = datetime.now().strftime("%d/%m/%Y")
+    logger.info(f"Fetching publications for date {date}")
+
     url = f"https://www.legifrance.gouv.fr/jorf/jo/{date}"
+
     publication_page_url = get_publication_page_url(url)
     if publication_page_url is not None:
         publication_page_content = get_publication_page_content(publication_page_url)
@@ -170,7 +180,7 @@ def handler(event, context):
 
         # Save the response to a JSON file
         filename = f"publication_content_{date.replace('/', '-')}.json"
-        with open(filename, "w", encoding="utf-8") as json_file:
+        with open(f"/tmp/{filename}", "w", encoding="utf-8") as json_file:
             json.dump(response, json_file, ensure_ascii=False)
 
         # Upload the JSON file to S3
@@ -178,7 +188,10 @@ def handler(event, context):
         s3_key = f"publications/{filename}"
         try:
             s3_client.upload_file(
-                filename, bucket_name, s3_key, ExtraArgs={"StorageClass": "ONEZONE_IA"}
+                f"/tmp/{filename}",
+                bucket_name,
+                s3_key,
+                ExtraArgs={"StorageClass": "ONEZONE_IA"},
             )
             logger.info(f"File uploaded to S3: s3://{bucket_name}/{s3_key}")
         except Exception as e:
