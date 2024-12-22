@@ -1,0 +1,75 @@
+services:
+  dynamodb-local:
+    image: public.ecr.aws/aws-dynamodb-local/aws-dynamodb-local:2.5.1
+    container_name: dynamodb-local
+    ports:
+      - "8000:8000"
+
+  vault-server-1:
+    image: public.ecr.aws/hashicorp/vault:1.18.3
+    container_name: vault-server-1
+    restart: always
+    ports:
+      - "8201:8200"
+    volumes:
+      - ./vault/config/vault.hcl:/vault/config/vault.hcl:ro
+    environment:
+      - VAULT_ADDR=http://0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.hcl
+    networks:
+      acme:
+        ipv4_address: 172.16.0.1
+
+  vault-server-2:
+    image: public.ecr.aws/hashicorp/vault:1.18.3
+    container_name: vault-server-2
+    restart: always
+    ports:
+      - "8202:8200"
+    volumes:
+      - ./vault/config/vault.hcl:/vault/config/vault.hcl:ro
+    environment:
+      - VAULT_ADDR=http://0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.hcl
+    networks:
+      acme:
+        ipv4_address: 172.16.0.2
+
+  vault-server-3:
+    image: public.ecr.aws/hashicorp/vault:1.18.3
+    container_name: vault-server-3
+    restart: always
+    ports:
+      - "8203:8200"
+    volumes:
+      - ./vault/config/vault.hcl:/vault/config/vault.hcl:ro
+    environment:
+      - VAULT_ADDR=http://0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: vault server -config=/vault/config/vault.hcl
+    networks:
+      acme:
+        ipv4_address: 172.16.0.3
+
+  postgres:
+    image: public.ecr.aws/docker/library/postgres:16-alpine
+    shm_size: 128mb
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: 2c7WNIP3HmnP
+      POSTGRES_USER: acme_root_user
+      POSTGRES_DB: acme_research_lab
+
+networks:
+  acme:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.0.0/28
+          gateway: 172.16.0.14

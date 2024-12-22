@@ -1,6 +1,0 @@
-services:
-  dynamodb-local:
-    image: public.ecr.aws/aws-dynamodb-local/aws-dynamodb-local:2.5.1
-    container_name: dynamodb-local
-    ports:
-      - "8000:8000"
